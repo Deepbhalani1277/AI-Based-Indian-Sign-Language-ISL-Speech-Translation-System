@@ -1,0 +1,132 @@
+.feedback-page {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+}
+
+.feedback-container {
+    width: 100%;
+    max-width: 600px;
+}
+
+.feedback-card {
+    background: var(--bg-white);
+    border-radius: 16px;
+    padding: 3rem 2.5rem;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-light);
+    text-align: center;
+}
+
+.feedback-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-purple) 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: white;
+}
+
+.feedback-icon svg {
+    width: 40px;
+    height: 40px;
+}
+
+.feedback-card h1 {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.feedback-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2.5rem;
+}
+
+.feedback-form {
+    text-align: left;
+}
+
+/* Star Rating */
+.rating-section {
+    margin-bottom: 1.5rem;
+}
+
+.rating-section .form-label {
+    display: block;
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.star svg {
+    width: 40px;
+    height: 40px;
+    color: var(--border-medium);
+    transition: all 0.2s ease;
+}
+
+.star:hover svg,
+.star.active svg {
+    color: #fbbf24;
+    transform: scale(1.1);
+}
+
+/* Feedback Textarea */
+.feedback-textarea {
+    min-height: 150px;
+    padding: 1rem !important;
+    resize: vertical;
+}
+
+.feedback-submit {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .feedback-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .feedback-card h1 {
+        font-size: 1.5rem;
+    }
+
+    .feedback-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .feedback-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .star svg {
+        width: 32px;
+        height: 32px;
+    }
+}

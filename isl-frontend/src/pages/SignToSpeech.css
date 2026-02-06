@@ -1,0 +1,262 @@
+.sign-to-speech-page {
+    min-height: calc(100vh - 80px);
+    padding: 3rem 0;
+}
+
+.content-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+/* Camera Section */
+.camera-section .card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.camera-feed {
+    background: #1a1a1a;
+    border-radius: 12px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.camera-placeholder {
+    text-align: center;
+    color: #6b7280;
+}
+
+.camera-icon-large {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.5rem;
+    color: #6b7280;
+}
+
+.placeholder-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.placeholder-subtitle {
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+.camera-active {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    position: relative;
+}
+
+.camera-frame {
+    width: 100%;
+    height: 100%;
+    border: 2px dashed rgba(13, 148, 136, 0.3);
+    border-radius: 8px;
+    margin: 1rem;
+}
+
+.recording-indicator {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rec-dot {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.camera-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+.camera-controls .btn {
+    flex: 1;
+}
+
+/* Settings Section */
+.settings-section .card {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.settings-section h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.toggle-setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    background: var(--bg-light);
+    border-radius: 12px;
+}
+
+.toggle-setting h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.toggle-setting p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-medium);
+    transition: 0.3s;
+    border-radius: 28px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--primary-teal);
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+}
+
+/* Translation Output */
+.translation-output h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.output-box {
+    background: var(--bg-light);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    padding: 2rem;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.output-placeholder {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.output-placeholder-sub {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .camera-controls {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .camera-feed {
+        min-height: 300px;
+    }
+
+    .camera-active {
+        min-height: 300px;
+    }
+
+    .toggle-setting {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .switch {
+        align-self: flex-end;
+    }
+}

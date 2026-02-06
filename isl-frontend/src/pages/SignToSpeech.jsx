@@ -1,22 +1,126 @@
-import React from 'react';
-import CameraFeed from '../components/camera/CameraFeed';
-import CameraControls from '../components/camera/CameraControls';
-import GestureText from '../components/isl/GestureText';
-import useCamera from '../hooks/useCamera';
+import React, { useState } from 'react';
+import './SignToSpeech.css';
 
 const SignToSpeech = () => {
-    const { stream, isActive, startCamera, stopCamera } = useCamera();
+    const [cameraOn, setCameraOn] = useState(false);
+    const [isRecognizing, setIsRecognizing] = useState(false);
+    const [outputLanguage, setOutputLanguage] = useState('english');
+    const [liveVoice, setLiveVoice] = useState(false);
+
+    const handleToggleCamera = () => {
+        setCameraOn(!cameraOn);
+    };
+
+    const handleStartRecognition = () => {
+        setIsRecognizing(true);
+        // Placeholder for recognition logic
+    };
+
+    const handleStopRecognition = () => {
+        setIsRecognizing(false);
+    };
 
     return (
         <div className="sign-to-speech-page">
-            <h1>Sign to Speech</h1>
-            <CameraFeed stream={stream} />
-            <CameraControls
-                isActive={isActive}
-                onStart={startCamera}
-                onStop={stopCamera}
-            />
-            <GestureText text="" />
+            <div className="page-header">
+                <h1>ISL to Speech Translation</h1>
+                <p className="page-subtitle">Convert Indian Sign Language gestures into spoken words</p>
+            </div>
+
+            <div className="content-grid">
+                {/* Left Column - Camera Feed */}
+                <div className="camera-section">
+                    <div className="card">
+                        <div className="camera-feed">
+                            {!cameraOn ? (
+                                <div className="camera-placeholder">
+                                    <svg className="camera-icon-large" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M23 7l-7 5 7 5V7z" fill="currentColor" opacity="0.3" />
+                                        <rect x="1" y="5" width="15" height="14" rx="2" fill="currentColor" opacity="0.3" />
+                                        <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                    </svg>
+                                    <p className="placeholder-title">Camera is off</p>
+                                    <p className="placeholder-subtitle">Click the button below to start</p>
+                                </div>
+                            ) : (
+                                <div className="camera-active">
+                                    <div className="camera-frame">
+                                        <div className="recording-indicator">
+                                            <span className="rec-dot"></span>
+                                            REC
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="camera-controls">
+                            <button
+                                className="btn btn-teal btn-large"
+                                onClick={handleToggleCamera}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
+                                    <rect x="1" y="5" width="15" height="14" rx="2" fill="currentColor" />
+                                </svg>
+                                {cameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
+                            </button>
+                            <button
+                                className="btn btn-primary btn-large"
+                                onClick={isRecognizing ? handleStopRecognition : handleStartRecognition}
+                                disabled={!cameraOn}
+                            >
+                                {isRecognizing ? 'Stop Recognition' : 'Start Recognition'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column - Settings & Output */}
+                <div className="settings-section">
+                    <div className="card">
+                        <h3>Settings</h3>
+
+                        <div className="form-group">
+                            <label className="form-label">Output Language</label>
+                            <select
+                                className="form-input"
+                                value={outputLanguage}
+                                onChange={(e) => setOutputLanguage(e.target.value)}
+                                style={{ paddingLeft: '1rem' }}
+                            >
+                                <option value="english">English</option>
+                                <option value="hindi">Hindi</option>
+                                <option value="marathi">Marathi</option>
+                                <option value="gujarati">Gujarati</option>
+                            </select>
+                        </div>
+
+                        <div className="toggle-setting">
+                            <div>
+                                <h4>Enable Live Voice Output</h4>
+                                <p>Automatically speak translated text</p>
+                            </div>
+                            <label className="switch">
+                                <input
+                                    type="checkbox"
+                                    checked={liveVoice}
+                                    onChange={(e) => setLiveVoice(e.target.checked)}
+                                />
+                                <span className="slider"></span>
+                            </label>
+                        </div>
+
+                        <div className="translation-output">
+                            <h4>Translation Output</h4>
+                            <div className="output-box">
+                                <p className="output-placeholder">No translation yet</p>
+                                <p className="output-placeholder-sub">Start recognition to see results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
