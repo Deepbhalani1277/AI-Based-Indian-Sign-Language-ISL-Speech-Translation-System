@@ -135,7 +135,10 @@ MIT
 
 ## 👥 Contributors
 
-Your Name
+deep bhalani
+het rakholiya
+ohm bhatia
+parv patel
 
 ---
 
