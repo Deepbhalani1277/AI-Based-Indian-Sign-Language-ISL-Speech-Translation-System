@@ -1,23 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import useCamera from '../hooks/useCamera';
 import './SignToSpeech.css';
 
 const SignToSpeech = () => {
-    const [cameraOn, setCameraOn] = useState(false);
+    const videoRef = useRef(null);
+    const { stream, isActive, startCamera, stopCamera } = useCamera();
     const [isRecognizing, setIsRecognizing] = useState(false);
     const [outputLanguage, setOutputLanguage] = useState('english');
     const [liveVoice, setLiveVoice] = useState(false);
+    const [translatedText, setTranslatedText] = useState('');
 
-    const handleToggleCamera = () => {
-        setCameraOn(!cameraOn);
+    // Update video element when stream changes
+    useEffect(() => {
+        if (videoRef.current && stream) {
+            videoRef.current.srcObject = stream;
+        }
+    }, [stream]);
+
+    const handleToggleCamera = async () => {
+        if (isActive) {
+            stopCamera();
+            setIsRecognizing(false);
+        } else {
+            await startCamera();
+        }
     };
 
     const handleStartRecognition = () => {
         setIsRecognizing(true);
-        // Placeholder for recognition logic
+        setTranslatedText('Recognition started... (Model will be added later)');
+        // TODO: Add gesture recognition logic here when model is ready
     };
 
     const handleStopRecognition = () => {
         setIsRecognizing(false);
+        setTranslatedText('Recognition stopped');
     };
 
     return (
@@ -32,7 +49,7 @@ const SignToSpeech = () => {
                 <div className="camera-section">
                     <div className="card">
                         <div className="camera-feed">
-                            {!cameraOn ? (
+                            {!isActive ? (
                                 <div className="camera-placeholder">
                                     <svg className="camera-icon-large" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M23 7l-7 5 7 5V7z" fill="currentColor" opacity="0.3" />
@@ -44,12 +61,24 @@ const SignToSpeech = () => {
                                 </div>
                             ) : (
                                 <div className="camera-active">
-                                    <div className="camera-frame">
+                                    <video
+                                        ref={videoRef}
+                                        autoPlay
+                                        playsInline
+                                        muted
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            borderRadius: '8px'
+                                        }}
+                                    />
+                                    {isRecognizing && (
                                         <div className="recording-indicator">
                                             <span className="rec-dot"></span>
                                             REC
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -63,12 +92,12 @@ const SignToSpeech = () => {
                                     <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
                                     <rect x="1" y="5" width="15" height="14" rx="2" fill="currentColor" />
                                 </svg>
-                                {cameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
+                                {isActive ? 'Turn Off Camera' : 'Turn On Camera'}
                             </button>
                             <button
                                 className="btn btn-primary btn-large"
                                 onClick={isRecognizing ? handleStopRecognition : handleStartRecognition}
-                                disabled={!cameraOn}
+                                disabled={!isActive}
                             >
                                 {isRecognizing ? 'Stop Recognition' : 'Start Recognition'}
                             </button>
@@ -114,8 +143,14 @@ const SignToSpeech = () => {
                         <div className="translation-output">
                             <h4>Translation Output</h4>
                             <div className="output-box">
-                                <p className="output-placeholder">No translation yet</p>
-                                <p className="output-placeholder-sub">Start recognition to see results</p>
+                                {translatedText ? (
+                                    <p className="output-text">{translatedText}</p>
+                                ) : (
+                                    <>
+                                        <p className="output-placeholder">No translation yet</p>
+                                        <p className="output-placeholder-sub">Start recognition to see results</p>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
