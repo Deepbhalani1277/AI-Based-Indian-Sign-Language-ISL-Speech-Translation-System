@@ -1,4 +1,5 @@
 import cv2
+import joblib
 import mediapipe as mp
 import numpy as np
 from typing import Optional, List, Tuple
@@ -20,11 +21,11 @@ class MLService:
         )
         self.mp_drawing = mp.solutions.drawing_utils
         
-        # Placeholder for trained model (you'll add your actual model here)
+        # Trained models from ml_models/ (gesture_model + label_encoder/sign detector)
         self.gesture_model = None
-        self.sign_detector = None
-        
-        # ISL gesture mappings (basic example - expand with your actual gestures)
+        self.label_encoder = None  # sign detector - decodes indices to sign names
+
+        # Fallback gesture labels when label_encoder is not loaded
         self.gesture_labels = {
             0: "Hello",
             1: "Thank you",
@@ -38,24 +39,30 @@ class MLService:
             9: "Water"
         }
     
-    def load_models(self, gesture_model_path: str = None, sign_detector_path: str = None):
+    def load_models(
+        self,
+        gesture_model_path: str = None,
+        label_encoder_path: str = None,
+    ):
         """
-        Load trained ML models
+        Load trained ML models from ml_models/ directory.
+        label_encoder = sign detector (decodes gesture indices to sign names).
         """
         try:
             if gesture_model_path and os.path.exists(gesture_model_path):
-                # Load your trained model here
-                # Example: self.gesture_model = joblib.load(gesture_model_path)
+                self.gesture_model = joblib.load(gesture_model_path)
                 print(f"✅ Gesture model loaded from {gesture_model_path}")
             else:
                 print("⚠️  Gesture model not found - using mock predictions")
-            
-            if sign_detector_path and os.path.exists(sign_detector_path):
-                # Load your sign detector model here
-                # Example: self.sign_detector = tf.keras.models.load_model(sign_detector_path)
-                print(f"✅ Sign detector loaded from {sign_detector_path}")
+
+            if label_encoder_path and os.path.exists(label_encoder_path):
+                self.label_encoder = joblib.load(label_encoder_path)
+                self.gesture_labels = {
+                    i: label for i, label in enumerate(self.label_encoder.classes_)
+                }
+                print(f"✅ Sign detector (label_encoder) loaded from {label_encoder_path}")
             else:
-                print("⚠️  Sign detector not found - using mock predictions")
+                print("⚠️  Sign detector not found - using fallback gesture labels")
         except Exception as e:
             print(f"❌ Error loading models: {e}")
     
@@ -99,19 +106,25 @@ class MLService:
                 return None, None
             
             # If model is loaded, use it for prediction
-            if self.gesture_model:
-                # Predict using your trained model
-                # prediction = self.gesture_model.predict([landmarks])
-                # predicted_label = np.argmax(prediction)
-                # confidence = float(np.max(prediction))
-                pass
+            if self.gesture_model is not None:
+                landmarks_array = np.array(landmarks).reshape(1, -1)
+                if hasattr(self.gesture_model, "predict_proba"):
+                    pred_proba = self.gesture_model.predict_proba(landmarks_array)[0]
+                    predicted_label = int(np.argmax(pred_proba))
+                    confidence = float(np.max(pred_proba))
+                else:
+                    predicted_label = int(self.gesture_model.predict(landmarks_array)[0])
+                    confidence = 0.9
+                if self.label_encoder is not None:
+                    predicted_text = self.label_encoder.inverse_transform([predicted_label])[0]
+                else:
+                    predicted_text = self.gesture_labels.get(predicted_label, "Unknown")
             else:
-                # Mock prediction for testing
+                # Mock prediction when model not loaded
                 import random
                 predicted_label = random.randint(0, 9)
                 confidence = random.uniform(0.7, 0.95)
-            
-            predicted_text = self.gesture_labels.get(predicted_label, "Unknown")
+                predicted_text = self.gesture_labels.get(predicted_label, "Unknown")
             return predicted_text, confidence
             
         except Exception as e:

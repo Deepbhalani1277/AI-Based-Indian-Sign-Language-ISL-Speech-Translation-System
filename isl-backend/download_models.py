@@ -52,9 +52,9 @@ def download_models():
             "url": "YOUR_GOOGLE_DRIVE_LINK_OR_DROPBOX_LINK",
             "required": True
         },
-        "sign_detector.h5": {
+        "label_encoder.pkl": {
             "url": "YOUR_GOOGLE_DRIVE_LINK_OR_DROPBOX_LINK",
-            "required": False
+            "required": True
         }
     }
     

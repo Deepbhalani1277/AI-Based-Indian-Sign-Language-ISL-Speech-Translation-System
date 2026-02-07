@@ -1,3 +1,4 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from typing import List
@@ -5,6 +6,10 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Backend root directory (isl-backend)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     # Database
@@ -30,9 +35,10 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE: int = 10485760
     UPLOAD_DIR: str = "uploads"
     
-    # ML Models
-    GESTURE_MODEL_PATH: str = "ml_models/gesture_model.pkl"
-    SIGN_DETECTOR_PATH: str = "ml_models/sign_detector.h5"
+    # ML Models (paths relative to isl-backend directory)
+    GESTURE_MODEL_PATH: str = str(BASE_DIR / "ml_models" / "gesture_model.pkl")
+    # label_encoder.pkl = sign detector (decodes predicted indices to sign names)
+    LABEL_ENCODER_PATH: str = str(BASE_DIR / "ml_models" / "label_encoder.pkl")
     
     class Config:
         env_file = ".env"

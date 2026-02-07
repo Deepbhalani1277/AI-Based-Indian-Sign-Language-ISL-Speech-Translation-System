@@ -46,7 +46,7 @@ async def startup_event():
     try:
         ml_service.load_models(
             gesture_model_path=settings.GESTURE_MODEL_PATH,
-            sign_detector_path=settings.SIGN_DETECTOR_PATH
+            label_encoder_path=settings.LABEL_ENCODER_PATH,
         )
         print("✅ ML models loaded")
     except Exception as e:
