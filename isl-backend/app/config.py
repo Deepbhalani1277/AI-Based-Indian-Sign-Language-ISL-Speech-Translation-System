@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # CORS - Use list directly
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
     
+    # Google Gemini API
+    GEMINI_API_KEY: str = "AIzaSyB78kK5WFv6lDEb85bxTqyuzcEYShUGmac"
+    
     # File Upload
     MAX_FILE_SIZE: int = 10485760
     UPLOAD_DIR: str = "uploads"

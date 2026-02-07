@@ -6,13 +6,29 @@ import './Auth.css';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        login(email, password);
-        navigate('/dashboard');
+        setError('');
+        setLoading(true);
+
+        try {
+            const result = await login(email, password);
+
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                setError(result.error || 'Login failed. Please check your credentials.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -30,6 +46,20 @@ const Login = () => {
                     <h1>Welcome Back</h1>
                     <p className="auth-subtitle">Login to access ISL translation features</p>
 
+                    {error && (
+                        <div style={{
+                            background: '#fee2e2',
+                            border: '1px solid #ef4444',
+                            color: '#991b1b',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '8px',
+                            marginBottom: '1rem',
+                            fontSize: '0.875rem'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="auth-form">
                         <div className="form-group">
                             <label className="form-label">Email Address</label>
@@ -44,6 +74,7 @@ const Login = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -61,12 +92,17 @@ const Login = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary btn-large auth-submit">
-                            Login
+                        <button
+                            type="submit"
+                            className="btn btn-primary btn-large auth-submit"
+                            disabled={loading}
+                        >
+                            {loading ? 'Logging in...' : 'Login'}
                         </button>
 
                         <p className="auth-footer">

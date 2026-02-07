@@ -68,11 +68,16 @@ class FeedbackResponse(BaseModel):
 # Gesture Processing Schemas
 class GestureProcessRequest(BaseModel):
     image: str  # Base64 encoded image
+    language: Optional[str] = "english"  # Target language for translation
+    generate_sentence: Optional[bool] = True  # Whether to use AI for sentence generation
 
 class GestureProcessResponse(BaseModel):
     success: bool
-    text: Optional[str] = None
+    text: Optional[str] = None  # Original detected word/gesture
     confidence: Optional[float] = None
+    generated_sentence: Optional[str] = None  # AI-generated sentence
+    translated_text: Optional[str] = None  # Translated to target language
+    target_language: Optional[str] = None
     error: Optional[str] = None
 
 class SpeechToSignRequest(BaseModel):
@@ -83,3 +88,4 @@ class SpeechToSignResponse(BaseModel):
     gestures: Optional[List[str]] = None
     animations: Optional[List[str]] = None
     error: Optional[str] = None
+

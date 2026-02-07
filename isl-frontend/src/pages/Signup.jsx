@@ -10,6 +10,8 @@ const Signup = () => {
         password: '',
         confirmPassword: ''
     });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { signup } = useAuth();
     const navigate = useNavigate();
 
@@ -20,14 +22,35 @@ const Signup = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+
         if (formData.password !== formData.confirmPassword) {
-            alert('Passwords do not match!');
+            setError('Passwords do not match!');
             return;
         }
-        signup(formData.name, formData.email, formData.password);
-        navigate('/dashboard');
+
+        if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const result = await signup(formData.name, formData.email, formData.password);
+
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                setError(result.error || 'Failed to create account. Please try again.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -45,6 +68,20 @@ const Signup = () => {
                     <h1>Create Account</h1>
                     <p className="auth-subtitle">Join us to start translating ISL</p>
 
+                    {error && (
+                        <div style={{
+                            background: '#fee2e2',
+                            border: '1px solid #ef4444',
+                            color: '#991b1b',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '8px',
+                            marginBottom: '1rem',
+                            fontSize: '0.875rem'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="auth-form">
                         <div className="form-group">
                             <label className="form-label">Full Name</label>
@@ -60,6 +97,7 @@ const Signup = () => {
                                     value={formData.name}
                                     onChange={handleChange}
                                     required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -78,6 +116,7 @@ const Signup = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -97,6 +136,7 @@ const Signup = () => {
                                     onChange={handleChange}
                                     required
                                     minLength={6}
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -115,12 +155,17 @@ const Signup = () => {
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary btn-large auth-submit">
-                            Sign Up
+                        <button
+                            type="submit"
+                            className="btn btn-primary btn-large auth-submit"
+                            disabled={loading}
+                        >
+                            {loading ? 'Creating Account...' : 'Sign Up'}
                         </button>
 
                         <p className="auth-footer">

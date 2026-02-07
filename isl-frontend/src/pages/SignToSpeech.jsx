@@ -9,6 +9,9 @@ const SignToSpeech = () => {
     const [outputLanguage, setOutputLanguage] = useState('english');
     const [liveVoice, setLiveVoice] = useState(false);
     const [translatedText, setTranslatedText] = useState('');
+    const [detectedWords, setDetectedWords] = useState([]);
+    const [generatedSentence, setGeneratedSentence] = useState('');
+    const [translatedSentence, setTranslatedSentence] = useState('');
 
     // Update video element when stream changes
     useEffect(() => {
@@ -28,20 +31,79 @@ const SignToSpeech = () => {
 
     const handleStartRecognition = () => {
         setIsRecognizing(true);
-        setTranslatedText('Recognition started... (Model will be added later)');
-        // TODO: Add gesture recognition logic here when model is ready
+        setDetectedWords([]);
+        setGeneratedSentence('');
+        setTranslatedSentence('');
+        setTranslatedText('Recognition started... Show your gestures!');
+        // TODO: Start continuous gesture recognition
     };
 
     const handleStopRecognition = () => {
         setIsRecognizing(false);
-        setTranslatedText('Recognition stopped');
+        setTranslatedText('Recognition stopped. Processing with AI...');
+
+        // Simulate gesture detection (replace with actual detection)
+        // In real implementation, you'd accumulate gestures during recognition
+        const mockDetectedWords = ['hello', 'thank', 'you'];
+        setDetectedWords(mockDetectedWords);
+
+        // Generate sentence and translate
+        generateAndTranslate(mockDetectedWords);
+    };
+
+    const generateAndTranslate = async (words) => {
+        try {
+            // For demonstration, we'll use the process-gesture endpoint
+            // In real implementation, you'd have accumulated these words
+            const response = await fetch('http://localhost:5000/api/process-gesture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image: 'mock_base64_image', // This would be actual image data
+                    language: outputLanguage,
+                    generate_sentence: true
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setGeneratedSentence(data.generated_sentence || data.text);
+                setTranslatedSentence(data.translated_text || data.text);
+
+                // Speak the translated text if live voice is enabled
+                if (liveVoice && data.translated_text) {
+                    speakText(data.translated_text);
+                }
+            }
+        } catch (error) {
+            console.error('Error generating sentence:', error);
+            setTranslatedText('Error processing gestures. Please try again.');
+        }
+    };
+
+    const speakText = (text) => {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+
+            // Set language based on selection
+            const langMap = {
+                'english': 'en-US',
+                'hindi': 'hi-IN',
+                'marathi': 'mr-IN',
+                'gujarati': 'gu-IN'
+            };
+            utterance.lang = langMap[outputLanguage] || 'en-US';
+
+            window.speechSynthesis.speak(utterance);
+        }
     };
 
     return (
         <div className="sign-to-speech-page">
             <div className="page-header">
                 <h1>ISL to Speech Translation</h1>
-                <p className="page-subtitle">Convert Indian Sign Language gestures into spoken words</p>
+                <p className="page-subtitle">Convert Indian Sign Language gestures into spoken words with AI enhancement</p>
             </div>
 
             <div className="content-grid">
@@ -119,9 +181,9 @@ const SignToSpeech = () => {
                                 style={{ paddingLeft: '1rem' }}
                             >
                                 <option value="english">English</option>
-                                <option value="hindi">Hindi</option>
-                                <option value="marathi">Marathi</option>
-                                <option value="gujarati">Gujarati</option>
+                                <option value="hindi">Hindi (हिंदी)</option>
+                                <option value="marathi">Marathi (मराठी)</option>
+                                <option value="gujarati">Gujarati (ગુજરાતી)</option>
                             </select>
                         </div>
 
@@ -143,12 +205,52 @@ const SignToSpeech = () => {
                         <div className="translation-output">
                             <h4>Translation Output</h4>
                             <div className="output-box">
-                                {translatedText ? (
-                                    <p className="output-text">{translatedText}</p>
+                                {detectedWords.length > 0 ? (
+                                    <div style={{ width: '100%', textAlign: 'left' }}>
+                                        <div style={{ marginBottom: '1rem' }}>
+                                            <strong style={{ color: '#6b7280', fontSize: '0.875rem' }}>Detected Words:</strong>
+                                            <p style={{ margin: '0.5rem 0', color: '#374151' }}>
+                                                {detectedWords.join(', ')}
+                                            </p>
+                                        </div>
+
+                                        {generatedSentence && (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <strong style={{ color: '#0d9488', fontSize: '0.875rem' }}>
+                                                    ✨ AI Generated Sentence:
+                                                </strong>
+                                                <p style={{ margin: '0.5rem 0', color: '#0f172a', fontSize: '1.125rem', fontWeight: 600 }}>
+                                                    {generatedSentence}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {translatedSentence && outputLanguage !== 'english' && (
+                                            <div style={{
+                                                background: '#f0fdfa',
+                                                padding: '1rem',
+                                                borderRadius: '8px',
+                                                border: '2px solid #0d9488'
+                                            }}>
+                                                <strong style={{ color: '#0d9488', fontSize: '0.875rem' }}>
+                                                    🌐 Translated ({outputLanguage}):
+                                                </strong>
+                                                <p style={{
+                                                    margin: '0.5rem 0 0 0',
+                                                    color: '#0f172a',
+                                                    fontSize: '1.25rem',
+                                                    fontWeight: 700,
+                                                    lineHeight: 1.6
+                                                }}>
+                                                    {translatedSentence}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <>
                                         <p className="output-placeholder">No translation yet</p>
-                                        <p className="output-placeholder-sub">Start recognition to see results</p>
+                                        <p className="output-placeholder-sub">Start recognition to see AI-enhanced results</p>
                                     </>
                                 )}
                             </div>

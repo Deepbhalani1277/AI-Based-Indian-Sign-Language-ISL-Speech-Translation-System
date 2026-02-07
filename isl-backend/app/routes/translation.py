@@ -12,6 +12,7 @@ from app.models.database import TranslationHistory
 from app.utils.database import get_db
 from app.utils.helpers import decode_base64_image
 from app.services.ml_service import ml_service
+from app.services.gemini_service import gemini_service
 import time
 
 router = APIRouter(prefix="/api", tags=["Translation"])
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/api", tags=["Translation"])
 @router.post("/process-gesture", response_model=GestureProcessResponse)
 async def process_gesture(request: GestureProcessRequest, db: Session = Depends(get_db)):
     """
-    Process gesture image and return recognized text
+    Process gesture image and return recognized text with AI enhancement
     """
     try:
         start_time = time.time()
@@ -44,14 +45,33 @@ async def process_gesture(request: GestureProcessRequest, db: Session = Depends(
         # Calculate processing time
         duration_ms = int((time.time() - start_time) * 1000)
         
-        # TODO: Save to translation history (requires user authentication)
-        # For now, we'll skip saving to database
+        # Prepare base response
+        response_data = {
+            "success": True,
+            "text": predicted_text,
+            "confidence": confidence
+        }
         
-        return GestureProcessResponse(
-            success=True,
-            text=predicted_text,
-            confidence=confidence
-        )
+        # If sentence generation is enabled, use Gemini AI
+        if request.generate_sentence:
+            # For now, we'll treat single gesture as a word
+            # In real implementation, you'd accumulate words from multiple gestures
+            words = [predicted_text]
+            
+            # Generate sentence and translate using Gemini
+            gemini_result = gemini_service.generate_and_translate(
+                words=words,
+                target_language=request.language or "english"
+            )
+            
+            if gemini_result["success"]:
+                response_data["generated_sentence"] = gemini_result["generated_sentence"]
+                response_data["translated_text"] = gemini_result["translated_text"]
+                response_data["target_language"] = gemini_result["target_language"]
+        
+        # TODO: Save to translation history (requires user authentication)
+        
+        return GestureProcessResponse(**response_data)
         
     except Exception as e:
         print(f"Error processing gesture: {e}")
