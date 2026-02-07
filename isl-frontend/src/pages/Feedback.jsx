@@ -7,14 +7,34 @@ const Feedback = () => {
     const [category, setCategory] = useState('');
     const [feedback, setFeedback] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log({ rating, category, feedback });
-        // Reset form
-        setRating(0);
-        setCategory('');
-        setFeedback('');
-        alert('Thank you for your feedback!');
+
+        try {
+            const response = await fetch('http://localhost:5000/api/feedback/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rating: rating,
+                    comment: `[${category}] ${feedback}`,
+                    translation_id: null  // Optional: link to specific translation
+                })
+            });
+
+            if (response.ok) {
+                // Reset form
+                setRating(0);
+                setCategory('');
+                setFeedback('');
+                alert('✅ Thank you! Your feedback has been recorded.');
+            } else {
+                const error = await response.json();
+                alert('❌ Failed to submit feedback: ' + (error.detail || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            alert('❌ Failed to connect to server. Please ensure backend is running.');
+        }
     };
 
     return (

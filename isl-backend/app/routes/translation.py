@@ -69,7 +69,23 @@ async def process_gesture(request: GestureProcessRequest, db: Session = Depends(
                 response_data["translated_text"] = gemini_result["translated_text"]
                 response_data["target_language"] = gemini_result["target_language"]
         
-        # TODO: Save to translation history (requires user authentication)
+        # Save to translation history
+        try:
+            translation_record = TranslationHistory(
+                user_id=1,  # TODO: Replace with actual authenticated user_id when auth is implemented
+                type="sign-to-speech",
+                input_data=predicted_text,
+                output_data=response_data.get("translated_text") or response_data.get("generated_sentence") or predicted_text,
+                confidence_score=confidence,
+                duration_ms=duration_ms
+            )
+            db.add(translation_record)
+            db.commit()
+            print(f"✅ Translation saved to database (ID: {translation_record.id})")
+        except Exception as db_error:
+            print(f"⚠️  Failed to save to database: {db_error}")
+            # Don't fail the request if database save fails
+            db.rollback()
         
         return GestureProcessResponse(**response_data)
         
@@ -101,7 +117,24 @@ async def speech_to_sign(request: SpeechToSignRequest, db: Session = Depends(get
                 error="Could not convert text to sign language"
             )
         
-        # TODO: Save to translation history (requires user authentication)
+        
+        # Save to translation history
+        try:
+            translation_record = TranslationHistory(
+                user_id=1,  # TODO: Replace with actual authenticated user_id when auth is implemented
+                type="speech-to-sign",
+                input_data=request.text,
+                output_data=", ".join(gestures),  # Store gestures as comma-separated string
+                confidence_score=None,  # No confidence score for speech-to-sign
+                duration_ms=None
+            )
+            db.add(translation_record)
+            db.commit()
+            print(f"✅ Translation saved to database (ID: {translation_record.id})")
+        except Exception as db_error:
+            print(f"⚠️  Failed to save to database: {db_error}")
+            # Don't fail the request if database save fails
+            db.rollback()
         
         return SpeechToSignResponse(
             success=True,
