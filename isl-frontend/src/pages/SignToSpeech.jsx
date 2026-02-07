@@ -2,16 +2,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import useCamera from '../hooks/useCamera';
 import './SignToSpeech.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const SignToSpeech = () => {
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const recognitionIntervalRef = useRef(null);
+
     const { stream, isActive, startCamera, stopCamera } = useCamera();
     const [isRecognizing, setIsRecognizing] = useState(false);
     const [outputLanguage, setOutputLanguage] = useState('english');
     const [liveVoice, setLiveVoice] = useState(false);
-    const [translatedText, setTranslatedText] = useState('');
     const [detectedWords, setDetectedWords] = useState([]);
     const [generatedSentence, setGeneratedSentence] = useState('');
     const [translatedSentence, setTranslatedSentence] = useState('');
+    const [currentGesture, setCurrentGesture] = useState('');
+    const [confidence, setConfidence] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Update video element when stream changes
     useEffect(() => {
@@ -20,12 +27,91 @@ const SignToSpeech = () => {
         }
     }, [stream]);
 
+    // Cleanup interval on unmount
+    useEffect(() => {
+        return () => {
+            if (recognitionIntervalRef.current) {
+                clearInterval(recognitionIntervalRef.current);
+            }
+        };
+    }, []);
+
     const handleToggleCamera = async () => {
         if (isActive) {
             stopCamera();
             setIsRecognizing(false);
+            if (recognitionIntervalRef.current) {
+                clearInterval(recognitionIntervalRef.current);
+            }
         } else {
             await startCamera();
+        }
+    };
+
+    const captureFrame = () => {
+        if (!videoRef.current || !canvasRef.current) return null;
+
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw current video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert canvas to base64 image
+        return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    };
+
+    const processFrame = async () => {
+        if (isProcessing) return; // Skip if already processing
+
+        try {
+            setIsProcessing(true);
+            const frameData = captureFrame();
+
+            if (!frameData) {
+                setIsProcessing(false);
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/api/process-gesture`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image: frameData,
+                    language: outputLanguage,
+                    generate_sentence: false // We'll generate sentence at the end
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.text) {
+                setCurrentGesture(data.text);
+                setConfidence(data.confidence || 0);
+
+                // Add to detected words if confidence is high enough
+                if (data.confidence > 0.6) {
+                    setDetectedWords(prev => {
+                        // Avoid duplicates of the same word in a row
+                        if (prev.length === 0 || prev[prev.length - 1] !== data.text) {
+                            return [...prev, data.text];
+                        }
+                        return prev;
+                    });
+                }
+            } else {
+                setCurrentGesture('No hand detected');
+                setConfidence(0);
+            }
+        } catch (error) {
+            console.error('Error processing frame:', error);
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -34,32 +120,38 @@ const SignToSpeech = () => {
         setDetectedWords([]);
         setGeneratedSentence('');
         setTranslatedSentence('');
-        setTranslatedText('Recognition started... Show your gestures!');
-        // TODO: Start continuous gesture recognition
+        setCurrentGesture('Recognizing...');
+
+        // Process frames every 1 second (adjust as needed)
+        recognitionIntervalRef.current = setInterval(processFrame, 1000);
     };
 
-    const handleStopRecognition = () => {
+    const handleStopRecognition = async () => {
         setIsRecognizing(false);
-        setTranslatedText('Recognition stopped. Processing with AI...');
+        setCurrentGesture('Processing with AI...');
 
-        // Simulate gesture detection (replace with actual detection)
-        // In real implementation, you'd accumulate gestures during recognition
-        const mockDetectedWords = ['hello', 'thank', 'you'];
-        setDetectedWords(mockDetectedWords);
+        if (recognitionIntervalRef.current) {
+            clearInterval(recognitionIntervalRef.current);
+        }
 
-        // Generate sentence and translate
-        generateAndTranslate(mockDetectedWords);
+        // Generate sentence and translate if we have detected words
+        if (detectedWords.length > 0) {
+            await generateAndTranslate(detectedWords);
+        } else {
+            setCurrentGesture('No gestures detected');
+        }
     };
 
     const generateAndTranslate = async (words) => {
         try {
-            // For demonstration, we'll use the process-gesture endpoint
-            // In real implementation, you'd have accumulated these words
-            const response = await fetch('http://localhost:5000/api/process-gesture', {
+            // Use the first word's image for the API call with sentence generation
+            const frameData = captureFrame();
+
+            const response = await fetch(`${API_URL}/api/process-gesture`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    image: 'mock_base64_image', // This would be actual image data
+                    image: frameData,
                     language: outputLanguage,
                     generate_sentence: true
                 })
@@ -68,8 +160,9 @@ const SignToSpeech = () => {
             const data = await response.json();
 
             if (data.success) {
-                setGeneratedSentence(data.generated_sentence || data.text);
-                setTranslatedSentence(data.translated_text || data.text);
+                setGeneratedSentence(data.generated_sentence || words.join(' '));
+                setTranslatedSentence(data.translated_text || words.join(' '));
+                setCurrentGesture('Complete!');
 
                 // Speak the translated text if live voice is enabled
                 if (liveVoice && data.translated_text) {
@@ -78,7 +171,7 @@ const SignToSpeech = () => {
             }
         } catch (error) {
             console.error('Error generating sentence:', error);
-            setTranslatedText('Error processing gestures. Please try again.');
+            setCurrentGesture('Error processing gestures');
         }
     };
 
@@ -141,9 +234,31 @@ const SignToSpeech = () => {
                                             REC
                                         </div>
                                     )}
+                                    {currentGesture && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: '10px',
+                                            left: '10px',
+                                            background: 'rgba(0,0,0,0.7)',
+                                            color: 'white',
+                                            padding: '8px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '14px'
+                                        }}>
+                                            <strong>{currentGesture}</strong>
+                                            {confidence > 0 && (
+                                                <span style={{ marginLeft: '8px', opacity: 0.8 }}>
+                                                    ({Math.round(confidence * 100)}%)
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
+
+                        {/* Hidden canvas for frame capture */}
+                        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
                         <div className="camera-controls">
                             <button

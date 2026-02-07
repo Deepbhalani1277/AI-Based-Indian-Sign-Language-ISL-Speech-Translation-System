@@ -2,94 +2,70 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const TranslationContext = createContext(null);
 
-// Mock translation history data
-const mockHistory = [
-    {
-        id: '1',
-        date: new Date('2026-02-06T10:30:00'),
-        type: 'ISL to Speech',
-        inputMethod: 'Camera',
-        output: 'Hello, how are you?',
-        language: 'English',
-        status: 'Success'
-    },
-    {
-        id: '2',
-        date: new Date('2026-02-06T14:15:00'),
-        type: 'Speech to ISL',
-        inputMethod: 'Voice',
-        output: 'Thank you very much',
-        language: 'English',
-        status: 'Success'
-    },
-    {
-        id: '3',
-        date: new Date('2026-02-05T16:45:00'),
-        type: 'ISL to Speech',
-        inputMethod: 'Camera',
-        output: 'Good morning',
-        language: 'English',
-        status: 'Success'
-    },
-    {
-        id: '4',
-        date: new Date('2026-02-05T11:20:00'),
-        type: 'Speech to ISL',
-        inputMethod: 'Text',
-        output: 'Welcome to our event',
-        language: 'English',
-        status: 'Partial'
-    },
-    {
-        id: '5',
-        date: new Date('2026-02-04T09:10:00'),
-        type: 'ISL to Speech',
-        inputMethod: 'Camera',
-        output: 'Please help me',
-        language: 'English',
-        status: 'Success'
-    }
-];
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const TranslationProvider = ({ children }) => {
     const [history, setHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         type: 'all',
         dateRange: 'all',
         searchQuery: ''
     });
 
-    useEffect(() => {
-        // Load history from localStorage or use mock data
-        const storedHistory = localStorage.getItem('isl_translation_history');
-        if (storedHistory) {
-            setHistory(JSON.parse(storedHistory));
-        } else {
-            setHistory(mockHistory);
-            localStorage.setItem('isl_translation_history', JSON.stringify(mockHistory));
+    // Fetch translation history from database
+    const fetchHistory = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_URL}/api/translation-history?limit=50`);
+            if (response.ok) {
+                const data = await response.json();
+                // Transform database format to frontend format
+                const transformedData = data.map(item => ({
+                    id: item.id.toString(),
+                    date: new Date(item.created_at),
+                    type: item.type === 'sign-to-speech' ? 'ISL to Speech' : 'Speech to ISL',
+                    inputMethod: item.type === 'sign-to-speech' ? 'Camera' : 'Voice/Text',
+                    output: item.output_data || item.input_data || 'N/A',
+                    language: 'English', // Default, can be enhanced later
+                    status: item.confidence_score > 0.7 ? 'Success' : item.confidence_score > 0.4 ? 'Partial' : 'Success',
+                    confidence: item.confidence_score,
+                    duration: item.duration_ms
+                }));
+                setHistory(transformedData);
+            }
+        } catch (error) {
+            console.error('Error fetching translation history:', error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        fetchHistory();
     }, []);
 
     const addTranslation = (translation) => {
+        // Optimistically add to UI (it's already saved to DB by the API)
         const newTranslation = {
             id: Date.now().toString(),
             date: new Date(),
             ...translation
         };
-        const updatedHistory = [newTranslation, ...history];
-        setHistory(updatedHistory);
-        localStorage.setItem('isl_translation_history', JSON.stringify(updatedHistory));
+        setHistory([newTranslation, ...history]);
     };
 
-    const deleteTranslation = (id) => {
+    const deleteTranslation = async (id) => {
+        // TODO: Add delete endpoint in backend
+        // For now, just remove from local state
         const updatedHistory = history.filter(item => item.id !== id);
         setHistory(updatedHistory);
-        localStorage.setItem('isl_translation_history', JSON.stringify(updatedHistory));
     };
 
-    const clearAllHistory = () => {
+    const clearAllHistory = async () => {
+        // TODO: Add clear all endpoint in backend
+        // For now, just clear local state
         setHistory([]);
-        localStorage.removeItem('isl_translation_history');
     };
 
     const getFilteredHistory = () => {
@@ -112,12 +88,14 @@ export const TranslationProvider = ({ children }) => {
 
     const value = {
         history,
+        loading,
         filters,
         setFilters,
         addTranslation,
         deleteTranslation,
         clearAllHistory,
-        getFilteredHistory
+        getFilteredHistory,
+        refreshHistory: fetchHistory
     };
 
     return <TranslationContext.Provider value={value}>{children}</TranslationContext.Provider>;

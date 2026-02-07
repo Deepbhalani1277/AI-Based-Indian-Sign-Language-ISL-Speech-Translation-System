@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     PORT: int = 5000
     DEBUG: bool = True
     
-    # CORS - Use list directly
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    # CORS - Allow all localhost origins for development
+    CORS_ORIGINS: List[str] = ["*"]  # Allow all origins in development
     
     # Google Gemini API
     GEMINI_API_KEY: str = "AIzaSyB78kK5WFv6lDEb85bxTqyuzcEYShUGmac"
