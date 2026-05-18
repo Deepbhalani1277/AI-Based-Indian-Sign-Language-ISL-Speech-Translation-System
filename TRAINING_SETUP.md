@@ -79,4 +79,4 @@ If you want to experiment with code interactively:
    ```powershell
    jupyter lab
    ```
-3. This will open a browser window where you can run `.ipynb` files.
+3. This will open a browser window where you can run `.ipynb` files
