@@ -142,4 +142,4 @@ parv patel
 
 ---
 
-**Need help?** Check the API documentation at http://localhost:5000/
+**Need help?** Check the API documentation at http://localhost:5000/DOCS
